@@ -38,4 +38,13 @@
  * variables are never copied from one scope to another, you simply lookup the chain to find it
  * cannot look DOWN the chain - functions can't access child function variables
  * 
+ * VAR is function scoped not block scoped - so if it is in a block within a function, it will still be accessible from every other block even if it was not declared at the top of the function
+ * this is important to bear in mind to prevent overwriting errors
+ * 
+ * because of the scope chain, JS looks in the current scope first BEFORE looking at the parent scope and then global scope. So if you REDECLARE a const in a block for example, JS will use your re-def, but you haven't
+ * acutally overwritten the global version of the variable. They are completely different variables
+ * this is why you can have multiple functions with the same parameters
+ * 
+ * 
+ * 
  */
