@@ -30,4 +30,22 @@
  * 
  * but functionCopy would loose its this, since it is now a regular function call, divorced from any object
  * 
+ * IMPORTANT - arrow functions in an object will not have the this of the object, their this would be the window object from the global scope
+ * 
+ * so const jonas = {
+ *  firstName: 'Jonas',
+ *  greet: () => { console.log(`Hello ${this.firstName}`); }
+ * }
+ * this would be undefined
+ * 
+ * BUT if have function inside of another function within an object, the interior function must be an arrow function to access the "grandparent" object
+ * or, within the first function assign this to a variable called _this or self or something
+ * 
+ * 
+ * Functions also get access to an arguments keyword, like this only available in regular functions, not arrow functions
+ * arguments is an array containing the arguments passed to the function
+ * useful when function is passed more arguments than might be specified as parameters or when you don't know how many arguments there will be
+ * can simply loop through the arguments array
+ * will not work in arrow functions
+ * 
  */
