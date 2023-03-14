@@ -17,6 +17,7 @@
  * 
  * BUT if there is an inner object or an array within the original object this will not be properly copied
  * Object.assign only creates a "shallow clone"
- * 
+ * that means deeply nested objects won't be properly copied
+ * for creating a "deep clone" would use a library like lodash
  * 
  */
