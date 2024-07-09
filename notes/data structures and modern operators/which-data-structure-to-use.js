@@ -1,0 +1,14 @@
+/*
+
+if need a simple list use an array or a set
+if need key value pairs need object or map
+
+json can easily be converted to javascript object
+
+sets are only really used to remove duplicate values from arrays
+
+maps actually have better performance than objects
+but they are harder to access than objects which use the . notation
+
+
+ */
