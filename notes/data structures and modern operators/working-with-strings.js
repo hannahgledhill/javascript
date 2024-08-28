@@ -31,4 +31,38 @@ const checkMiddleSeat = function(seat) {
 
 checkMiddleSeat('11B');
 
+
+airline.toLowerCase(); 
+airline.toUpperCase();
+// can change string to upper or lower case
+
+// fix capitalisation in passenger name
+const passenger = 'jOnAS';
+const passengerLower = passenger.toLowerCase();
+const passengerCorrect = pasengerLower[0].toUpperCase() + passengerLower.slice(1);
+
+// comparing emails
+const email = 'hello@jonas.io';
+const loginEmail = '  Hello@Jonas.Io \n';
+
+const normalisedEmail = loginEmail.toLowerCase().trim(); // trim will also strip out the \n
+console.log(email === normalisedEmail);
+
+// replace part of string
+const priceGB = '288,97£'; // want to change it to USB and change the , to a .
+const priceUS = priceGB.replace('£','$').replace(',','.');
+
+// BUT replace only replaces the first occurrence, can use replaceAll if it is available yet
+// or can use regexp
+
+const announcement = 'All passengers come to boarding door 23. Boarding door 23!';
+console.log(announcement.replace(/door/g, 'gate'));
+
+// boolean string methods
+const plane = 'A320neo';
+console.log(plane.includes('A320')); // returns true
+console.log(plane.startsWith('Air')); // returns false
+
+
+
 */
