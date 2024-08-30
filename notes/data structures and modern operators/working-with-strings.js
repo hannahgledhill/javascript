@@ -63,6 +63,46 @@ const plane = 'A320neo';
 console.log(plane.includes('A320')); // returns true
 console.log(plane.startsWith('Air')); // returns false
 
+// splitting strings
+console.log('a+very+nice+string'.split('+')); // creates an array
+const [firstName, lastName] = 'Jonas Schmedtman'.split(' ');
+
+// joining strings
+const newName = ['Mr', firstName, lastName.toUpperCase()].join(' '); // joins an array into a new string
+
+const capitaliseName = function(name) {
+    const names = name.split(' ');
+    const namesUpper = [];
+    for(const n of names) {
+        namesUpper.push(n[0].toUppercase() + n.slice(1)); // capitalise first letter of string
+    }
+    return namesUpper.join(' ');
+}
+
+console.log(capitaliseName('jessica ann smith davis'));
+
+// padding string
+const message = 'go to gate 23';
+console.log(message.padStart(25, '+')); // will output ++++++++go to gate 23 making 25 characters
+console.log(message.padEnd(25, '.'));  // will add ....s 
+
+// this is very useful for masking a credit card number
+const maskCreditCard = function(number) {
+    const str = number + ''; // adding an empty string will conver the entire bit of data to a string
+    const last = str.slice(-4); // get last 4 characters
+    return last.padStart(str.length, '*');
+}
+
+console.log(maskCreditCard(45438574389573945));
+
+// repeat
+const messageTwo = 'Bad weather... All departures delayed... ';
+console.log(messageTwo.repeat(5));
+
+
+
+
+
 
 
 */
