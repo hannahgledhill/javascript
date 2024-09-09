@@ -34,6 +34,8 @@ const account4 = {
 };
 
 const accounts = [account1, account2, account3, account4];
+const eurToUsd = 1.1;
+let currentAccount;
 
 // Elements
 const labelWelcome = document.querySelector('.welcome');
@@ -74,7 +76,23 @@ const displayMovements = function(movements) {
         containerMovements.insertAdjacentHTML('afterbegin', html); // new child will go in first as want to see most recent transactions at the top, rather than beforeend and afterend (outside container)
     });
 };
-displayMovements(account1.movements);
+
+const calcDisplayBalance = function(acc){
+    acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
+    labelBalance.textContent = `${acc.balance} EUR`;
+};
+
+const calcDisplaySummary = function(acc){
+    labelSumIn.textContent = `${acc.movements.filter(mov => mov > 0).reduce((acc, mov) => acc + mov, 0)}€`;
+    labelSumOut.textContent = `${Math.abs(acc.movements.filter(mov => mov < 0).reduce((acc, mov) => acc + mov, 0))}€`;
+    labelSumInterest.textContent = `${acc.movements.filter(mov => mov > 0).map(deposit => deposit * acc.interestRate/100).filter(interest => interest >= 1).reduce((acc, interest) => acc + interest, 0)}€`;
+};
+
+const updateUI = function(acc) {
+    displayMovements(acc.movements);
+    calcDisplayBalance(acc);
+    calcDisplaySummary(acc);
+}
 
 const createUsernames = function(acc) {
     acc.forEach(function(acc){
@@ -86,4 +104,34 @@ const createUsernames = function(acc) {
     }); // use foreach because we want to modify the original array not create a new one
 };
 createUsernames(accounts);
-console.log(accounts);
+
+// Event handlers
+btnLogin.addEventListener('click', function(e){
+    e.preventDefault(); // stops the form from submitting and reloading the page
+    currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);
+
+    if (currentAccount?.pin === Number(inputLoginPin.value)) { // the ? is the same as saying if currentAccount & currentAccount.pin etc.
+        labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`;
+        containerApp.style.opacity = 100;
+        updateUI(currentAccount);
+    }
+
+    inputLoginUsername.value = inputLoginPin.value = ''; // can clear both input fields at the same time, assignment operator works from right to left
+    inputLoginPin.blur(); // causes field to loose focus
+});
+
+btnTransfer.addEventListener('click', function(e){
+    e.preventDefault();
+    const amount = Number(inputTransferAmount.value);
+    const receiverAccount = accounts.find(acc => acc.username === inputTransferTo.value);
+    
+    if (amount > 0 && receiverAccount && currentAccount.balance >= amount && receiverAccount.username != currentAccount.username) {
+        currentAccount.movements.push(-amount);
+        receiverAccount.movements.push(amount);
+        updateUI(currentAccount);
+    }
+
+    inputTransferTo.value = inputTransferAmount.value = '';
+    inputTransferAmount.blur();
+});
+

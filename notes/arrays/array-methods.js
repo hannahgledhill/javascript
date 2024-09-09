@@ -45,3 +45,6 @@ console.log(arr.slice(-1)[0]); // also works but a bit more messier because it s
 
 console.log('jonas').at(0); // returns j
 console.log('hanna').at(-1); // returns a
+
+
+
