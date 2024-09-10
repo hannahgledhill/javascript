@@ -36,6 +36,7 @@ const account4 = {
 const accounts = [account1, account2, account3, account4];
 const eurToUsd = 1.1;
 let currentAccount;
+let sorted = false;
 
 // Elements
 const labelWelcome = document.querySelector('.welcome');
@@ -63,9 +64,10 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const displayMovements = function(movements) {
+const displayMovements = function(movements, sort = false) {
     containerMovements.innerHTML = ''; // empty the pre-existing transactions
-    movements.forEach(function(mov, i){
+    const sortedMovements = sort ? movements.slice().sort((a, b) => a - b) : movements; // don't want to affect orig array so use empty slice() to create a copy
+    sortedMovements.forEach(function(mov, i){
         const type = mov > 0 ? 'deposit' : 'withdrawal';
         const html = `
             <div class="movements__row">
@@ -134,4 +136,39 @@ btnTransfer.addEventListener('click', function(e){
     inputTransferTo.value = inputTransferAmount.value = '';
     inputTransferAmount.blur();
 });
+
+btnLoan.addEventListener('click', function(e){
+    e.preventDefault();
+    const amount = Number(inputLoanAmount.value);
+
+    if (amount > 0 && currentAccount.movements.some(mov => mov >= 0.1 * amount)) {
+        currentAccount.movements.push(amount);
+        updateUI(currentAccount);
+    }
+
+    inputLoanAmount.value = '';
+    inputLoanAmount.blur();
+});
+
+btnClose.addEventListener('click', function(e){
+    e.preventDefault();
+    if (inputCloseUsername.value === currentAccount.username && Number(inputClosePin.value) === currentAccount.pin) {
+        const index = accounts.findIndex(acc => acc.username === currentAccount.username);
+        accounts.splice(index, 1);
+
+        // hide ui
+        containerApp.style.opacity = 0; 
+    }
+
+    inputCloseUsername.value = inputClosePin.value = '';
+    inputClosePin.blur();
+});
+
+btnSort.addEventListener('click', function(e){
+    e.preventDefault();
+    displayMovements(currentAccount.movements, !sorted); // do the opposite of the current sorted value
+    sorted = !sorted; // flip it each time
+});
+
+
 

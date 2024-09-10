@@ -96,4 +96,51 @@ console.log(account);
 
 // find will return undefined if no element matches the condition
 
-// findindex
+// findindex - returns the index of the found element rather than the element
+
+if (inputCloseUsername.value === currentAccount.username && Number(inputClosePin.value) === currentAccount.pin) {
+    const index = accounts.findIndex(acc => acc.username === currentAccount.username);
+    accounts.splice(index, 1); // will remove this account from the accounts array
+}
+
+// similar to indexOf which lets you search array for values, but findIndex is more complciated and you can search within objects etc.
+// also have access to i and arr
+
+// some and every
+
+movements.includes(-130); // this only tests for equality
+movements.some(mov => mov > 0); // does the array contain any values greater than zero (ie. are there any deposits)
+movements.some(mov => mov > 5000); // are there any deposits over 5000
+movements.every(mov => mov > 0); // is every element in the array greater than zero, returns true or false
+
+// can also write callback function separately
+
+const depositCallback = mov => mov > 0;
+movements.some(depositCallback);
+movements.every(depositCallback);
+movements.filter(depositCallback);
+
+// allows you to reuse the same condition for multiple array methods
+
+// flat and flatMap
+
+const nestedArr = [[1,2,3],[4,5,6],7,8];
+console.log(nestedArr.flat()); // returns [1,2,3,4,5,6,7,8]
+
+const arrDeep = [[[1,2],3],[4,[5,6]],7,8];
+console.log(arrDeep.flat(2)); // parameter shows how many levels deep, gets the same as before
+
+// say the bank wants to calculate the sum of all the overall movements of all the accounts
+// put all movements together in an array and use flat
+
+const calculateBankSum = accounts
+    .map(acc => acc.movements)
+    .flat()
+    .reduce((acc,mov) => acc + mov, 0); // the first map creates an array of the movements arrays with 1 level of nesting, can now use flat() and then reduce
+
+// map and then flat is a pretty common operation, hence flatmap
+
+const calculateBankSum2 = accounts
+    .flatMap(acc => acc.movements)
+    .reduce((acc, mov) => acc + mov, 0);
+// flat map takes the map callback and can only do 1 level deep
