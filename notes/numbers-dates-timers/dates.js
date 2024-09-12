@@ -37,5 +37,28 @@ labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
 
 const dayPadded = `${now.getDate()}`.padStart(2, 0); // makes sure you would have 01, 02 etc.
 
-// calculations with dates
+// calculations with dates - using timestamps
 
+const calcDaysPassed = (date1, date2) => (date2 - date1) / (1000 * 60 * 60 * 24); // the calculation will return milliseconds so convert back to days
+console.log(calcDaysPassed(currentTimestamp, future)); 
+// can use math.abs and math.round to make sure always get a positive and whole number
+
+// internationalisation
+// js has a new api that lets us easily format numbers and strings according to different languages - very useful for currencies and dates
+
+console.log(new Intl.DateTimeFormat('en-US').format(now));
+console.log(new Intl.DateTimeFormat('en-GB').format(now));
+console.log(new Intl.DateTimeFormat('ar-SY').format(now));
+
+const options = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+}
+const locale = navigator.language; // get locale from browser
+console.log(new Intl.DateTimeFormat(locale, options).format(now));
+
+// see lingoes.net/en/translator/langcode.htm

@@ -24,3 +24,23 @@ console.log(Number.isFinite('20')); // false
 console.log(Number.isFinite(23 / 0)); // false
 
 console.log(Number.isInteger(20)); // true
+
+// internationalising numbers
+
+const num = 3245353.23;
+console.log('US: ', new Intl.NumberFormat('en-US').format(num)); // adds commas and decimal point
+console.log('Germany: ', new Intl.NumberFormat('de-DE').format(num)); // becomes 3.245.353,23
+console.log('Syria: ', new Intl.NumberFormat(navigator.language).format(num));
+
+// units
+
+const options = {
+    style: 'unit',
+    unit: 'mile-per-hour'
+};
+console.log('US: ', new Intl.NumberFormat('en-US', options).format(num));
+console.log('Germany: ', new Intl.NumberFormat('de-DE', options).format(num));
+
+options.style = 'currency';
+options.currency = 'EUR';
+console.log('Germany: ', new Intl.NumberFormat('de-DE', options).format(num));
