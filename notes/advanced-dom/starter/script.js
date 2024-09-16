@@ -10,6 +10,10 @@ const header = document.querySelector('.header');
 const message = document.createElement('div');
 const btnScrollTo = document.querySelector('.btn--scroll-to');
 const section1 = document.querySelector('#section--1');
+const tabs = document.querySelectorAll('.operations__tab');
+const tabsContainer = document.querySelector('.operations__tab-container');
+const tabsContent = document.querySelectorAll('.operations__content');
+const nav = document.querySelector('.nav');
 
 ///////////////////////////////////////
 // Modal window
@@ -93,13 +97,170 @@ document.querySelector('.nav__links').addEventListener('click', function(e){
 
 // tabbed component
 
-const tabs = document.querySelectorAll('.opeartions__tab');
-const tabsContainer = document.querySelector('.operations__tab-container');
-const tabsContent = document.querySelectorAll('.operations__content');
-
 tabsContainer.addEventListener('click',function(e){
     e.preventDefault();
+
     // problem with e.target because there are lots of children within the tab
     const clicked = e.target.closest('.operations__tab'); // will get the parent or the element itself if that is what was clicked
+    if (!clicked) return; // have to handle the event that clicked is null
     
+    tabs.forEach(t => t.classList.remove('operations__tab--active'));
+    clicked.classList.add('operations__tab--active');  
+
+    tabsContent.forEach(t => t.classList.remove('operations__content--active'));
+    document.querySelector(`.operations__content--${clicked.dataset.tab}`).classList.add('operations__content--active');
 });
+
+// menu fade animation
+
+const handleHover = function(e) {
+    if (e.target.classList.contains('nav__link')) { // don't need closest methods because there are no children we could accidentally click
+        const link = e.target;
+        const siblings = nav.querySelectorAll('.nav__link');
+        const logo = nav.querySelector('img');
+
+        siblings.forEach(el => {
+            if (el !== link) el.style.opacity = this;
+            logo.style.opacity = this;
+        });
+    }
+}
+// the bind allows us to pass in a "this" argument, if need more than one argument can pass in an array of arguments
+nav.addEventListener('mouseover', handleHover.bind(0.5)); // mouseenter does not bubble whereas mouseover does, opposite is mouseout rather than mouseleave
+nav.addEventListener('mouseout', handleHover.bind(1));
+
+// sticky navigation
+
+// this is not a very efficient way of doing it because the scroll event fires millions of times
+// const initialCoords = section1.getBoundingClientRect();
+// window.addEventListener('scroll', function(e){
+//     window.scrollY > initialCoords.top ? nav.classList.add('sticky') : nav.classList.remove('sticky');
+// });
+
+const stickyNav = function(entries) { 
+    const [entry] = entries; // this is the same as writing entries[0]
+    entry.isIntersecting ? nav.classList.remove('sticky') : nav.classList.add('sticky'); // add the sticky class when the header section is NO LONGER visible
+};
+
+const stickyNavOptions = {
+    root: null, // elements target is intersection, use null for entire viewport
+    threshold: 0, // percentage of intersection at which the callback will be called, can have multiple thresholds in an array
+    rootMargin: `-${nav.getBoundingClientRect().height}px`, // a box of -90 pixels that will "buffer" the target section, ie. trigger threshold 90 pixels before
+};
+
+const headerObserver = new IntersectionObserver(stickyNav, stickyNavOptions);
+headerObserver.observe(header);
+
+// revealing sections on scroll
+// use a class that sets the opacity to 0 so they preserve their height but are not visible, then remove the class as you approach the sections
+
+// const allSections = document.querySelectorAll('.section')
+// const revealSection = function(entries, observer) {
+//     const [entry] = entries;
+//     if (!entry.isIntersecting) return;
+
+//     entry.target.classList.remove('section--hidden');
+//     observer.unobserve(entry.target); // remove the observer once you've been through the section
+// };
+
+// const sectionObserver = new IntersectionObserver(revealSection, {
+//     root: null,
+//     threshold: 0.15,
+// });
+
+// allSections.forEach(section => {
+//     section.classList.add('section--hidden'); // good idea to add the section in JS in case people have JS disabled in their browser
+//     sectionObserver.observe(section);
+// });
+
+// lazy loading images
+// have a very low resolution image that is really small (like 200px wide) that is loaded in the begining with a lazy-img class that blurs it, reference real image in data-src
+
+const imgTargets = document.querySelectorAll('img[data-src]'); // select all the elements that have the data-src attribute
+const loadImg = function(entries, observer) {
+    const [entry] = entries;
+    if (!entry.isIntersecting) return;
+
+    entry.target.src = entry.target.dataset.src;
+    entry.target.addEventListener('load', function(e){ this.classList.remove('lazy-img') }); // only remove the blur class once the image has actually loaded
+    observer.unobserve(entry.target);
+};
+const imgObserver = new IntersectionObserver(loadImg, {
+    root: null,
+    threshold: 0,
+    rootMargin: '200px', // load them early so the user doesn't see any delay
+});
+imgTargets.forEach(img => imgObserver.observe(img));
+
+// slider
+// slides are all side by side, we use translateX with multiples of 100% to move between the slides 
+// have a transition: transform 1s; on the .slide class
+
+const slider = function() {
+    const slides = document.querySelectorAll('.slide');
+    const btnLeft = document.querySelector('.slider__btn--left');
+    const btnRight = document.querySelector('.slider__btn--right');
+    const dotContainer = document.querySelector('.dots');
+
+    const maxSlide = slides.length -1;
+    let curSlide = 0;
+    let allDots;
+
+    const createDots = function() {
+        slides.forEach((_, i) => {
+            dotContainer.insertAdjacentHTML('beforeend', `<button class="dots__dot" data-slide="${i}"></button>`);
+        });
+        allDots = document.querySelectorAll('.dots__dot');
+    };
+
+    const activateDot = function(slide) {
+        allDots.forEach(dot => dot.classList.remove('dots__dot--active'));
+        document.querySelector(`.dots__dot[data-slide="${slide}"]`).classList.add('dots__dot--active');
+    }
+
+    const goToSlide = function(slide) { 
+        slides.forEach((s, i) => s.style.transform = `translateX(${(i - slide) * 100}%)`);
+        activateDot(slide);
+    };
+
+    const nextSlide = function() {
+        curSlide === maxSlide ? curSlide = 0 : curSlide++;
+        goToSlide(curSlide);
+    };
+
+    const prevSlide = function() {
+        curSlide === 0 ? curSlide = maxSlide : curSlide--;
+        goToSlide(curSlide);
+    };
+
+    const init = function() {
+        createDots();
+        goToSlide(0);
+        btnRight.addEventListener('click', nextSlide);
+        btnLeft.addEventListener('click', prevSlide);
+
+        document.addEventListener('keydown', function(e){
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'ArrowRight') nextSlide();
+            // could write as e.key === 'ArrowLeft' && prevSlide() due to short circuiting
+        });
+
+        dotContainer.addEventListener('click', function(e){
+            if (e.target.classList.contains('dots__dot')) {
+                const slide = e.target.dataset.slide;
+                goToSlide(slide);
+            }
+        });
+    };
+
+    init();
+};
+
+slider(); // putting everything in a function means we don't pollute the global namespace, this is also basically how classes work, can also have an options object which means we can use the same slider in multiple instances on the same site
+
+
+
+
+
+
+
