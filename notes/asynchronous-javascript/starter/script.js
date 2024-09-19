@@ -11,7 +11,7 @@ const handleResponse = function(resp, msg = 'Something went wrong!') {
     return resp.json();
 };
 
-const renderCountry = function(data, className) {
+const renderCountry = function(data, className = "") {
     const html = `
         <article class="country ${className}">
         <img class="country__img" src="${data.flags.svg}" />
@@ -50,8 +50,36 @@ const getCountryData = function(country) {
         .finally(() => countriesContainer.style.opacity = 1); // always happens no matter eg. remove loading spinner
 };
 
-btn.addEventListener('click', function(){
-    getCountryData('portugal');
-    // getCountryData('usa');
-    // getCountryData('germany');
-});
+const getPosition = function() {
+    return new Promise(function(resolve, reject){
+        // navigator.geolocation.getCurrentPosition(position => resolve(position), err => reject(new Error(err)));
+        navigator.geolocation.getCurrentPosition(resolve, reject); // this is the same as above! will resolve the position and will reject the error :)
+    });
+}
+
+const whereAmI = function() {
+    getPosition()
+        .then(pos => {
+            const {latitude: lat, longitude: lng} = pos.coords;
+
+            return fetch(`https://api.weatherapi.com/v1/current.json?key=b19e0639639f44fa85f172605241909&q=${lat},${lng}&aqi=no`);
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Problem with geocoding ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            console.log(`You are in ${data.location.region}, ${data.location.country}`);
+
+            return fetch(`https://restcountries.com/v3.1/name/${data.location.country}`);
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Country not found (${res.status})`);
+            return res.json();
+        })
+        .then(data => renderCountry(data[0]))
+        .catch(err => console.error(`${err.message} 💥`))
+        .finally(() => countriesContainer.style.opacity = 1);
+}
+
+btn.addEventListener('click', whereAmI);

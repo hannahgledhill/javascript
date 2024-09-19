@@ -18,3 +18,48 @@
  * 
  * 
  */
+
+const lottery = new Promise(function(resolve, reject){ // this function will execute as soon as the promise is built, it contains the asyc operation(s) we want to compute and will return a result
+    console.log('lottery draw is happening....');
+    setTimeout(function(){
+        if (Math.random() >= 0.5) {
+            resolve('You WIN!!!'); // this function will happen when the promise is successful (fulfilled/resolved), this is what will be consumed by the then method
+        }
+        else {
+            reject(new Error('You lose :((')); // this will trigger the catch handler in the fetch
+        }
+    }, 2000);
+});
+
+lotterPromise.then(res => console.log(res)).catch(err => console.error(err));
+// will either console.log(You WIN!!!) or console.error(You lose :(())) depending on the random number
+
+// we generally only build promises when we are "promisifying" = converting old callback based functions into the promise format
+
+// let's promisify setTimeout into wait
+
+const wait = function(seconds) {
+    return new Promise(function(resolve){ // don't need reject because it's impossible for a timer to fail
+        setTimeout(resolve, seconds * 1000); // having a null resolve still works it just doesn't return anything
+    });
+}
+
+wait(1)
+    .then(() => {
+        console.log('1 seconds passed');
+        return wait(1);
+    })
+    .then(() => {
+        console.log('2 seconds passed');
+        return wait(1);
+    })
+    .then(() => {
+        console.log('3 seconds passed');
+        return wait(1);
+    })
+    .then(() => console.log('3 seconds passed'));
+
+// can resolve a promise immediately using the static method on the Promise object
+
+Promise.resolve('I am immediately resolved').then(x => console.log(x));
+Promise.reject('I am immediately rejected').then(x => console.log(x));
