@@ -57,29 +57,52 @@ const getPosition = function() {
     });
 }
 
-const whereAmI = function() {
-    getPosition()
-        .then(pos => {
-            const {latitude: lat, longitude: lng} = pos.coords;
+// const whereAmI = function() {
+//     getPosition()
+//         .then(pos => {
+//             const {latitude: lat, longitude: lng} = pos.coords;
 
-            return fetch(`https://api.weatherapi.com/v1/current.json?key=b19e0639639f44fa85f172605241909&q=${lat},${lng}&aqi=no`);
-        })
-        .then(res => {
-            if (!res.ok) throw new Error(`Problem with geocoding ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            console.log(`You are in ${data.location.region}, ${data.location.country}`);
+//             return fetch(`https://api.weatherapi.com/v1/current.json?key=b19e0639639f44fa85f172605241909&q=${lat},${lng}&aqi=no`);
+//         })
+//         .then(res => {
+//             if (!res.ok) throw new Error(`Problem with geocoding ${res.status}`);
+//             return res.json();
+//         })
+//         .then(data => {
+//             console.log(`You are in ${data.location.region}, ${data.location.country}`);
 
-            return fetch(`https://restcountries.com/v3.1/name/${data.location.country}`);
-        })
-        .then(res => {
-            if (!res.ok) throw new Error(`Country not found (${res.status})`);
-            return res.json();
-        })
-        .then(data => renderCountry(data[0]))
-        .catch(err => console.error(`${err.message} 💥`))
-        .finally(() => countriesContainer.style.opacity = 1);
-}
+//             return fetch(`https://restcountries.com/v3.1/name/${data.location.country}`);
+//         })
+//         .then(res => {
+//             if (!res.ok) throw new Error(`Country not found (${res.status})`);
+//             return res.json();
+//         })
+//         .then(data => renderCountry(data[0]))
+//         .catch(err => console.error(`${err.message} 💥`))
+//         .finally(() => countriesContainer.style.opacity = 1);
+// }
+
+const whereAmI = async function() {
+    try {
+        const pos = await getPosition();
+        const {latitude: lat, longitude: lng} = pos.coords;
+        const countryRes = await fetch(`https://api.weatherapi.com/v1/current.json?key=b19e0639639f44fa85f172605241909&q=${lat},${lng}&aqi=no`); // don't need to handle error here because we did it when we built the promise
+        const countryData = await countryRes.json();
+        const res = await fetch(`https://restcountries.com/v3.1/name/${countryData.location.country}`); // await will stop the code execution WITHIN the async function until the promise is fulfilled
+        if (!res.ok) throw new Error ('Problem getting country');
+        
+        const data = await res.json();
+        console.log(data);
+        renderCountry(data[0]);
+    }
+    catch (err) {
+        console.error(err);
+        renderCountry(`something went wrong ${err.message}`);
+        throw err;
+    }
+    countriesContainer.style.opacity = 1; // can put this outside catch block so it will always be executed
+};
+
+// this is a bit cleaner than using fetch.... maybe?
 
 btn.addEventListener('click', whereAmI);
