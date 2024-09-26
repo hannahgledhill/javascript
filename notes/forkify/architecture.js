@@ -29,4 +29,9 @@
  * we have a publisher which knows when to react and the subscriber which controls how to react in the controller
  * the subscriber subscribes to the publisher during init, passing the subscriber's execution function
  * 
+ * 
+ * ERRORS
+ * every place other than the controller should throw errors
+ * the controler can log to the console, send emails and choose which visual method to display to the user
+ * the view should contain the user error messages
  */
