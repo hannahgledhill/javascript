@@ -41,6 +41,8 @@ export default class View {
     }
 
     render(data) {
+        if (!data || (Array.isArray(data) && data.length === 0)) return this.renderError(); // we can return and call the render error method at the same time
+
         this._data = data;
         const markup = this._generateMarkup();
         this._clear();
