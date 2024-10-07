@@ -40,11 +40,13 @@ export default class View {
         this._parentEl.insertAdjacentHTML('afterbegin', markup);
     }
 
-    render(data) {
+    render(data, render = true) {
         if (!data || (Array.isArray(data) && data.length === 0)) return this.renderError(); // we can return and call the render error method at the same time
 
         this._data = data;
         const markup = this._generateMarkup();
+        if (!render) return markup;
+        
         this._clear();
         this._parentEl.insertAdjacentHTML('afterbegin', markup);
     }
