@@ -49,6 +49,28 @@ export default class View {
         this._parentEl.insertAdjacentHTML('afterbegin', markup);
     }
 
+    update(data) {
+        this._data = data;
+        const newMarkup = this._generateMarkup();
+        const newDOM = document.createRange().createContextualFragment(newMarkup); // basically creates like a shadow dom that we can compare to the current dom and only update the parts that have changed
+        const newElements = Array.from(newDOM.querySelectorAll('*')); // creates an array holding all the new dom elements
+        const curElements = Array.from(this._parentEl.querySelectorAll('*'));
+
+        newElements.forEach((newEl, i) => {
+            const curEl = curElements[i];
+
+            // update changed text
+            if (!newEl.isEqualNode(curEl) && newEl.firstChild?.nodeValue.trim() !== '') { // detects if the nodes are different and if they are nodes containing only text
+                curEl.textContent = newEl.textContent;
+            }
+
+            // update changed attributes
+            if (!newEl.isEqualNode(curEl)) {
+                Array.from(newEl.attributes).forEach(attr => curEl.setAttribute(attr.name, attr.value)); // loop over the new attributes and copy them to the current attributes
+            }
+        });
+    }
+
     _clear() {
         this._parentEl.innerHTML = '';
     }

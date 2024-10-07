@@ -593,9 +593,13 @@ var _searchViewJs = require("./views/searchView.js");
 var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
 var _resultsViewJs = require("./views/resultsView.js");
 var _resultsViewJsDefault = parcelHelpers.interopDefault(_resultsViewJs);
+var _paginationViewJs = require("./views/paginationView.js");
+var _paginationViewJsDefault = parcelHelpers.interopDefault(_paginationViewJs);
 var _runtime = require("regenerator-runtime/runtime");
 var _regeneratorRuntime = require("regenerator-runtime");
-if (module.hot) module.hot.accept();
+// if (module.hot) {
+//     module.hot.accept();  
+// }
 // https://forkify-api.herokuapp.com/v2
 ///////////////////////////////////////
 const controlRecipes = async function() {
@@ -604,6 +608,8 @@ const controlRecipes = async function() {
         if (!id) return;
         // render spinner
         (0, _recipeViewJsDefault.default).renderSpinner();
+        // update results view to mark selected search result
+        (0, _resultsViewJsDefault.default).update(_modelJs.getSearchResultsPage());
         // loading recipe
         await _modelJs.loadRecipe(id); // remember the loadRecipe is an async function so it will return a promise
         // rendering recipe
@@ -623,18 +629,41 @@ const controlSearchResults = async function() {
         // load search results
         await _modelJs.loadSearchResults(query);
         // render results
-        (0, _resultsViewJsDefault.default).render(_modelJs.state.search.results);
+        (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage());
+        // render pagination
+        (0, _paginationViewJsDefault.default).render(_modelJs.state.search);
     } catch (err) {
         console.error(err);
     }
 };
+const controlPagination = function(targetPage) {
+    // render results
+    (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage(targetPage));
+    // render pagination
+    (0, _paginationViewJsDefault.default).render(_modelJs.state.search);
+};
+const controlServings = function(newServings) {
+    // update recipe servings (in state)
+    _modelJs.updateServings(newServings);
+    // update the recipe view
+    // recipeView.render(model.state.recipe);
+    (0, _recipeViewJsDefault.default).update(_modelJs.state.recipe);
+};
+const controlAddBookmark = function() {
+    if (!_modelJs.state.recipe.bookmarked) _modelJs.addBookmark(_modelJs.state.recipe);
+    else _modelJs.deleteBookmark(_modelJs.state.recipe.id);
+    (0, _recipeViewJsDefault.default).update(_modelJs.state.recipe);
+};
 const init = function() {
     (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipes);
+    (0, _recipeViewJsDefault.default).addHandlerUpdateServings(controlServings);
+    (0, _recipeViewJsDefault.default).addHandlerAddBookmark(controlAddBookmark);
     (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResults);
+    (0, _paginationViewJsDefault.default).addHandlerClick(controlPagination);
 };
 init();
 
-},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","regenerator-runtime/runtime":"dXNgZ","./views/searchView.js":"9OQAM","regenerator-runtime":"dXNgZ","./views/resultsView.js":"cSbZE"}],"49tUX":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","regenerator-runtime/runtime":"dXNgZ","./views/searchView.js":"9OQAM","regenerator-runtime":"dXNgZ","./views/resultsView.js":"cSbZE","./views/paginationView.js":"6z7bi"}],"49tUX":[function(require,module,exports) {
 "use strict";
 // TODO: Remove this module from `core-js@4` since it's split to modules listed below
 require("52e9b3eefbbce1ed");
@@ -1892,6 +1921,9 @@ parcelHelpers.export(exports, "state", ()=>state);
 parcelHelpers.export(exports, "loadRecipe", ()=>loadRecipe);
 parcelHelpers.export(exports, "loadSearchResults", ()=>loadSearchResults);
 parcelHelpers.export(exports, "getSearchResultsPage", ()=>getSearchResultsPage);
+parcelHelpers.export(exports, "updateServings", ()=>updateServings);
+parcelHelpers.export(exports, "addBookmark", ()=>addBookmark);
+parcelHelpers.export(exports, "deleteBookmark", ()=>deleteBookmark);
 var _configJs = require("./config.js");
 var _regeneratorRuntime = require("regenerator-runtime");
 var _helpersJs = require("./helpers.js");
@@ -1900,8 +1932,10 @@ const state = {
     search: {
         query: "",
         results: [],
+        page: 1,
         resultsPerPage: (0, _configJs.RES_PER_PAGE)
-    }
+    },
+    bookmarks: []
 };
 const loadRecipe = async function(id) {
     try {
@@ -1915,8 +1949,10 @@ const loadRecipe = async function(id) {
             image: recipe.image_url,
             servings: recipe.servings,
             cookingTime: recipe.cooking_time,
-            ingredients: recipe.ingredients
+            ingredients: recipe.ingredients,
+            bookmarked: false
         };
+        if (state.bookmarks.some((bookmark)=>bookmark.id === id)) state.recipe.bookmarked = true;
     } catch (err) {
         throw err;
     }
@@ -1925,6 +1961,7 @@ const loadSearchResults = async function(query) {
     try {
         state.search.query = query;
         const data = await (0, _helpersJs.getJSON)(`${(0, _configJs.API_URL)}recipes?search=${query}`);
+        state.search.page = 1;
         state.search.results = data.data.recipes.map((recipe)=>{
             return {
                 id: recipe.id,
@@ -1937,10 +1974,28 @@ const loadSearchResults = async function(query) {
         throw err;
     }
 };
-const getSearchResultsPage = function(page) {
+const getSearchResultsPage = function(page = state.search.page) {
+    state.search.page = page;
     const start = (page - 1) * state.search.resultsPerPage;
     const end = page * state.search.resultsPerPage;
     return state.search.results.slice(start, end);
+};
+const updateServings = function(newServings) {
+    state.recipe.ingredients.forEach((ing)=>ing.quantity = ing.quantity * newServings / state.recipe.servings); // want to mutate the state so use foreach not map
+    state.recipe.servings = newServings;
+};
+const addBookmark = function(recipe) {
+    // add bookmark to array
+    state.bookmarks.push(recipe);
+    // mark current recipe as bookmarked
+    if (recipe.id === state.recipe.id) state.recipe.bookmarked = true;
+};
+const deleteBookmark = function(id) {
+    // delete recipe from bookmarks array
+    const index = state.bookmarks.findIndex((el)=>el.id === id);
+    state.bookmarks.splice(index, 1);
+    // mark current recipe as not bookmarked
+    if (id === state.recipe.id) state.recipe.bookmarked = false;
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config.js":"k5Hzs","./helpers.js":"hGI1E","regenerator-runtime":"dXNgZ"}],"gkKU3":[function(require,module,exports) {
@@ -2615,6 +2670,23 @@ class RecipeView extends (0, _viewJsDefault.default) {
             "load"
         ].forEach((ev)=>window.addEventListener(ev, handler)); // nice way to add multiple event listeners to execute the same function
     }
+    addHandlerUpdateServings(handler) {
+        this._parentEl.addEventListener("click", function(e) {
+            e.preventDefault();
+            const btn = e.target.closest(".btn--increase-servings");
+            if (!btn) return;
+            const targetServings = Number.parseInt(btn.getAttribute("data-target-servings"));
+            if (targetServings > 0) handler(targetServings);
+        });
+    }
+    addHandlerAddBookmark(handler) {
+        this._parentEl.addEventListener("click", function(e) {
+            e.preventDefault();
+            const btn = e.target.closest(".btn--bookmark");
+            if (!btn) return;
+            handler();
+        });
+    }
     _generateMarkup() {
         return `
             <figure class="recipe__fig">
@@ -2640,12 +2712,12 @@ class RecipeView extends (0, _viewJsDefault.default) {
                     <span class="recipe__info-text">servings</span>
 
                     <div class="recipe__info-buttons">
-                    <button class="btn--tiny btn--increase-servings">
+                    <button class="btn--tiny btn--increase-servings" data-target-servings="${this._data.servings - 1}">
                         <svg>
                         <use href="${0, _iconsSvgDefault.default}#icon-minus-circle"></use>
                         </svg>
                     </button>
-                    <button class="btn--tiny btn--increase-servings">
+                    <button class="btn--tiny btn--increase-servings" data-target-servings="${this._data.servings + 1}">
                         <svg>
                         <use href="${0, _iconsSvgDefault.default}#icon-plus-circle"></use>
                         </svg>
@@ -2655,9 +2727,9 @@ class RecipeView extends (0, _viewJsDefault.default) {
 
                 <div>
                 </div>
-                <button class="btn--round">
+                <button class="btn--round btn--bookmark">
                     <svg class="">
-                    <use href="${0, _iconsSvgDefault.default}#icon-bookmark-fill"></use>
+                    <use href="${0, _iconsSvgDefault.default}#icon-bookmark${this._data.bookmarked ? "-fill" : ""}"></use>
                     </svg>
                 </button>
             </div>
@@ -2752,6 +2824,20 @@ class View {
         const markup = this._generateMarkup();
         this._clear();
         this._parentEl.insertAdjacentHTML("afterbegin", markup);
+    }
+    update(data) {
+        this._data = data;
+        const newMarkup = this._generateMarkup();
+        const newDOM = document.createRange().createContextualFragment(newMarkup); // basically creates like a shadow dom that we can compare to the current dom and only update the parts that have changed
+        const newElements = Array.from(newDOM.querySelectorAll("*")); // creates an array holding all the new dom elements
+        const curElements = Array.from(this._parentEl.querySelectorAll("*"));
+        newElements.forEach((newEl, i)=>{
+            const curEl = curElements[i];
+            // update changed text
+            if (!newEl.isEqualNode(curEl) && newEl.firstChild?.nodeValue.trim() !== "") curEl.textContent = newEl.textContent;
+            // update changed attributes
+            if (!newEl.isEqualNode(curEl)) Array.from(newEl.attributes).forEach((attr)=>curEl.setAttribute(attr.name, attr.value)); // loop over the new attributes and copy them to the current attributes
+        });
     }
     _clear() {
         this._parentEl.innerHTML = "";
@@ -2929,9 +3015,10 @@ class ResultsView extends (0, _viewDefault.default) {
         return this._data.map(this._generateMarkupPreview).join("");
     }
     _generateMarkupPreview(result) {
+        const id = window.location.hash.slice(1);
         return `
             <li class="preview">
-                <a class="preview__link" href="#${result.id}">
+                <a class="preview__link ${result.id === id ? "preview__link--active" : ""}" href="#${result.id}">
                 <figure class="preview__fig">
                     <img src="${result.image}" alt="${result.title}" />
                 </figure>
@@ -2946,6 +3033,58 @@ class ResultsView extends (0, _viewDefault.default) {
 }
 exports.default = new ResultsView();
 
-},{"./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","url:../../img/icons.svg":"loVOp"}]},["hycaY","aenu9"], "aenu9", "parcelRequire3a11")
+},{"./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","url:../../img/icons.svg":"loVOp"}],"6z7bi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _viewJs = require("./View.js");
+var _viewJsDefault = parcelHelpers.interopDefault(_viewJs);
+var _iconsSvg = require("url:../../img/icons.svg");
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
+class PaginationView extends (0, _viewJsDefault.default) {
+    _parentEl = document.querySelector(".pagination");
+    _errorMessage = "We couldn't find that recipe, please try again.";
+    _message;
+    addHandlerClick(handler) {
+        this._parentEl.addEventListener("click", function(e) {
+            e.preventDefault();
+            const btn = e.target.closest(".btn--inline");
+            if (!btn) return;
+            const targetPage = Number.parseInt(btn.dataset.targetPage);
+            handler(targetPage);
+        });
+    }
+    _generateMarkupButton(type = "next") {
+        if (type === "next") return `
+                <button class="btn--inline pagination__btn--next" data-target-page="${this._data.page + 1}">
+                    <span>Page ${this._data.page + 1}</span>
+                    <svg class="search__icon">
+                    <use href="${0, _iconsSvgDefault.default}#icon-arrow-right"></use>
+                    </svg>
+                </button>
+            `;
+        return `
+            <button class="btn--inline pagination__btn--prev" data-target-page="${this._data.page - 1}">
+                <svg class="search__icon">
+                <use href="${0, _iconsSvgDefault.default}#icon-arrow-left"></use>
+                </svg>
+                <span>Page ${this._data.page - 1}</span>
+            </button>
+        `;
+    }
+    _generateMarkup() {
+        const numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage);
+        // page 1, and there are other pages
+        if (this._data.page === 1 && numPages > 1) return this._generateMarkupButton("next");
+        // page 1, and there are NO other pages
+        if (this._data.page === 1 && numPages === 1) return "";
+        // last page
+        if (this._data.page === numPages) return this._generateMarkupButton("prev");
+        // other page
+        if (this._data.page < numPages) return `${this._generateMarkupButton("prev")}${this._generateMarkupButton("next")}`;
+    }
+}
+exports.default = new PaginationView();
+
+},{"./View.js":"5cUXS","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["hycaY","aenu9"], "aenu9", "parcelRequire3a11")
 
 //# sourceMappingURL=index.e37f48ea.js.map
